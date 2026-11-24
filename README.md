@@ -13,31 +13,24 @@ other privately.
 
 ## Try it
 
-Open **https://merti.onrender.com** and sign in with a demo account
-(the role comes from the account — there is no role picker on the login page):
-
-| Role | Username | Password | Mobile (for OTP) |
-|------|----------|----------|------------------|
-| Candidate | `candidate` | `candidate123` | 9000000001 |
-| Assessor / Consultant | `assessor` | `assessor123` | 9000000002 |
-| Mentor | `mentor` | `mentor123` | 9000000003 |
-| Platform Administrator | `admin` | `admin123` | 9000000004 |
-
-You can also register a new account from the login page.
+Open **https://merti.onrender.com** and create a free **Candidate** account from the login
+page to explore the platform. Accounts for the assessor, mentor and administrator roles are
+available on request from the maintainer.
 
 **For the AI interview, use Google Chrome** and click **Allow** when asked for camera and
 microphone access. Live speech-to-text uses the browser's Web Speech API, which works best
 in Chrome (a typed-answer fallback is always available).
 
 ### Suggested walkthrough
-1. Sign in as `candidate` → **Begin assessment** on *Core Consulting Capability*.
-2. Answer the adaptive MCQs, then the AI interview (or choose **Skip interview** to be
-   scored on the MCQs alone) → your **analysis report** opens automatically.
+1. Register a Candidate account (optionally upload a resume to get an AI skill profile).
+2. Start **Core Consulting Capability** and answer the adaptive MCQs, then the AI interview
+   (or choose **Skip interview** to be scored on the MCQs alone). Your **analysis report**
+   opens automatically.
 3. Open the profile-picture menu → **Assessments & Analysis** to see every attempt, its
-   report, evaluator feedback, and the **Re-attempt** button.
-4. Sign out, sign in as `assessor`, open the candidate's assessment and leave feedback.
-5. Use **Messages** (Gmail-style) to write to any other role, with AI drafting help.
-6. Sign in as `admin` → **Content** to add or remove questions.
+   report, evaluator feedback and the **Re-attempt** button.
+4. Use **Messages** (Gmail-style) to write to other users, with AI drafting help.
+5. Assessors, mentors and administrators review results and leave feedback; administrators
+   also manage the question bank.
 
 ---
 
