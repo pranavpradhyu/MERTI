@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block container_class %}mid{% endblock %}
+{% block content %}
+<div class="pagehead between">
+  <h1>{{ 'My profile' if is_self else target.full_name }}</h1>
+  <div class="flex">
+    {% if is_self %}<a class="btn btn-ghost btn-sm" href="{{ url_for('main.edit_profile') }}">Edit profile</a>{% endif %}
+    {% if not is_self %}<a class="btn btn-primary btn-sm" href="{{ url_for('mail.compose', to=target.id) }}">Message</a>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('main.candidate_assessments', user_id=target.id) }}">Assessments</a>{% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="flex" style="align-items:flex-start;gap:18px">
+    <div class="avatar">
+      {% if target.picture %}<img class="avatar" src="{{ url_for('static', filename='uploads/' ~ target.picture) }}" alt="">
+      {% else %}{{ target.initials }}{% endif %}</div>
+    <div style="flex:1">
+      <h2 style="margin-bottom:4px">{{ target.full_name }}
+        <span class="badge role-{{ target.role }}">{{ target.role_label }}</span></h2>
+      <table style="margin-top:10px">
+        <tr><th style="width:160px">Username</th><td>@{{ target.username }}</td></tr>
+        <tr><th>Email</th><td>{{ target.email }}</td></tr>
+        <tr><th>First name</th><td>{{ target.first_name }}</td></tr>
+        <tr><th>Last name</th><td>{{ target.last_name }}</td></tr>
+        <tr><th>Mobile</th><td>{{ target.mobile }}</td></tr>
+        <tr><th>Role</th><td>{{ target.role_label }}</td></tr>
+        {% if target.role == 'candidate' %}
+          <tr><th>Consent</th><td>{{ 'Provided ✓' if target.consent else 'Not provided' }}</td></tr>
+          <tr><th>Resume</th><td>
+            {% if target.resume_file %}<a href="{{ url_for('static', filename='resumes/' ~ target.resume_file) }}" target="_blank">On file</a>
+            {% else %}Not uploaded{% endif %}</td></tr>
+          {% if target.resume_skills %}
+            <tr><th>Skills</th><td>{% for s in target.resume_skills %}<span class="chip">{{ s }}</span>{% endfor %}</td></tr>
+          {% endif %}
+        {% endif %}
+        <tr><th>Member since</th><td>{{ target.created_at.strftime('%d %b %Y') }}</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

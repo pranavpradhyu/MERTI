@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }}{% endblock %}
+{% block container_class %}narrow{% endblock %}
+{% block content %}
+<div class="card pad-lg" style="text-align:center">
+  <div class="score-big">{{ code }}</div>
+  <p class="muted" style="margin:12px 0 20px">{{ message }}</p>
+  <a class="btn btn-primary" href="{{ url_for('main.dashboard') if current_user else url_for('auth.login') }}">
+    {{ 'Back to dashboard' if current_user else 'Go to sign in' }}
+  </a>
+</div>
+{% endblock %}

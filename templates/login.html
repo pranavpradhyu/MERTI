@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block body %}
+<style>
+.auth-stage{min-height:100vh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(1200px 600px at 50% -10%,#6d6be0 0%,#4b47b8 45%,#2a2a63 100%)}
+.auth-inner{width:100%;max-width:440px;text-align:center}
+/* Intro animation scene */
+.scene{position:relative;height:270px;margin:0 auto 6px;width:340px}
+.letters{position:absolute;left:0;bottom:30px;width:340px;height:200px;display:flex;align-items:flex-end;justify-content:center;gap:4px}
+.letters .ltr{font-weight:900;color:#fff;line-height:.8;font-family:Inter,system-ui,sans-serif;
+  text-shadow:0 6px 18px rgba(0,0,0,.25);opacity:.96}
+.letters .l-m{font-size:58px}.letters .l-e{font-size:80px}.letters .l-r{font-size:102px}.letters .l-t{font-size:126px}.letters .l-i{font-size:150px;position:relative}
+/* Sun is a child of the I: always centred directly on top of it, at any size */
+.sun{position:absolute;left:50%;bottom:100%;margin-bottom:.05em;width:.4em;height:.4em;border-radius:50%;
+  background:radial-gradient(circle at 50% 45%,#fff2c2,#ffd166 55%,#f7a53b);
+  transform:translate(-50%,60%) scale(.6);opacity:0;pointer-events:none}
+.sun.rise{animation:sunrise 1.2s ease forwards}
+@keyframes sunrise{to{transform:translate(-50%,0) scale(1);opacity:1;box-shadow:0 0 .22em .06em rgba(255,209,102,.6)}}
+.walker{position:absolute;left:10px;bottom:34px;width:26px;height:40px;will-change:transform}
+.walker svg{width:26px;height:40px;display:block}
+.bob{animation:bob .45s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.tagline{color:#dcdcff;font-size:.82rem;margin-top:2px;letter-spacing:.3px}
+.auth-card{background:#fff;border-radius:20px;box-shadow:0 24px 70px rgba(10,12,40,.4);
+  padding:30px;opacity:0;transform:translateY(14px);pointer-events:none;transition:.5s;margin-top:10px}
+body.revealed .auth-card{opacity:1;transform:none;pointer-events:auto}
+body.revealed .scene{height:130px}
+body.revealed .letters .l-m{font-size:28px}body.revealed .letters .l-e{font-size:38px}body.revealed .letters .l-r{font-size:48px}
+body.revealed .letters .l-t{font-size:58px}body.revealed .letters .l-i{font-size:68px}
+body.revealed .walker{display:none}
+.auth-card h1{font-size:1.45rem;margin-bottom:2px}
+.auth-foot{margin-top:16px;font-size:.9rem;color:var(--muted)}
+.skip{position:fixed;top:16px;right:18px;color:#dcdcff;font-size:.82rem;cursor:pointer;background:none;border:0}
+</style>
+
+<div class="auth-stage">
+  <button class="skip" id="skipBtn" type="button">Skip intro →</button>
+  <div class="auth-inner">
+    <div class="scene" id="scene">
+      <div class="letters">
+        <span class="ltr l-m">M</span><span class="ltr l-e">E</span><span class="ltr l-r">R</span>
+        <span class="ltr l-t">T</span><span class="ltr l-i" id="ltrI">I<span class="sun" id="sun"></span></span>
+      </div>
+      <div class="walker" id="walker">
+        <svg viewBox="0 0 26 40"><g class="bob" fill="#fff">
+          <circle cx="13" cy="7" r="6"/><rect x="10" y="13" width="6" height="15" rx="3"/>
+          <rect x="4" y="16" width="10" height="4" rx="2" transform="rotate(-20 9 18)"/>
+          <rect x="12" y="16" width="10" height="4" rx="2" transform="rotate(20 17 18)"/>
+          <rect x="9" y="26" width="4" height="12" rx="2" transform="rotate(-12 11 32)"/>
+          <rect x="13" y="26" width="4" height="12" rx="2" transform="rotate(12 15 32)"/>
+        </g></svg>
+      </div>
+    </div>
+    <div class="tagline">Management Consulting Assessment &amp; Development</div>
+
+    <div class="auth-card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+      {% endwith %}
+      <h1>Welcome back</h1>
+      <p class="muted small" style="margin-bottom:6px">Sign in to your MERTI account</p>
+      <form method="post" action="{{ url_for('auth.login') }}" style="text-align:left">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="username">Username</label>
+        <input id="username" name="username" value="{{ form.username or '' }}" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" autocomplete="current-password" required>
+        <div style="text-align:right;margin-top:8px">
+          <a class="small" href="{{ url_for('auth.forgot') }}">Forgot password?</a>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:16px">Sign in</button>
+      </form>
+      <div class="auth-foot">New to MERTI? <a href="{{ url_for('auth.register') }}">Create an account</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const walker=document.getElementById('walker'), sun=document.getElementById('sun'),
+          iEl=document.getElementById('ltrI'), letters=[...document.querySelectorAll('.letters .ltr')];
+    let revealed=false, timers=[];
+    function reveal(){ if(revealed) return; revealed=true; timers.forEach(clearTimeout);
+      document.body.classList.add('revealed'); sun.classList.add('rise'); }
+
+    function play(){
+      const w=walker.getBoundingClientRect();
+      // Walk up the tops of M, E, T, I (feet on each letter's top edge)
+      const pts=letters.map(el=>{ const r=el.getBoundingClientRect();
+        return {x:r.left+r.width/2-(w.left+w.width/2), y:r.top-w.bottom+6}; });
+      const last=pts[pts.length-1];
+      const frames=[{transform:'translate(0,0)',opacity:1,offset:0}];
+      pts.forEach((p,i)=>frames.push({transform:`translate(${p.x}px,${p.y}px)`,opacity:1,offset:.14+i*.17}));
+      // The I lifts him up into the sunshine, then he fades into it
+      frames.push({transform:`translate(${last.x}px,${last.y-34}px) scale(.55)`,opacity:0,offset:1});
+      walker.animate(frames,{duration:3600,easing:'ease-in-out',fill:'forwards'});
+      timers.push(setTimeout(()=>{ iEl.animate([{transform:'translateY(0)'},{transform:'translateY(-14px)'},{transform:'translateY(0)'}],
+        {duration:900,easing:'ease-in-out'}); sun.classList.add('rise'); },2500));
+      timers.push(setTimeout(reveal,4000));
+    }
+    requestAnimationFrame(()=>requestAnimationFrame(play));
+    document.getElementById('skipBtn').addEventListener('click',reveal);
+  })();
+</script>
+{% endblock %}

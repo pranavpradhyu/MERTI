@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Assessment{% endblock %}
+{% block container_class %}mid{% endblock %}
+{% block content %}
+<div class="card pad-lg">
+  <div class="progress-head">
+    <div>
+      <span class="badge role-assessor">{{ meta.name }}</span>
+      <div class="muted small" style="margin-top:6px">
+        Competency: {{ competency_name(question.competency) }} ·
+        Difficulty {{ question.difficulty }}/5 · Adaptive
+      </div>
+    </div>
+    <div class="muted small">Question {{ answered + 1 }} of {{ total }}</div>
+  </div>
+  <div class="meter lg" style="margin-bottom:22px">
+    <span style="width:{{ (answered / total * 100) }}%"></span>
+  </div>
+
+  <h2 style="font-size:1.2rem;margin-bottom:18px">{{ question.text }}</h2>
+
+  <form method="post" action="{{ url_for('assess.answer', sid=session.id) }}" id="qForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% for opt in question.options %}
+      <label class="option" data-idx="{{ loop.index0 }}">
+        <input type="radio" name="choice" value="{{ loop.index0 }}" required>
+        <span class="k">{{ "ABCD"[loop.index0] }}</span>{{ opt }}
+      </label>
+    {% endfor %}
+    <button class="btn btn-primary btn-block" type="submit" style="margin-top:14px" id="nextBtn" disabled>
+      {% if answered + 1 >= total %}Finish &amp; see my report{% else %}Submit &amp; continue →{% endif %}
+    </button>
+  </form>
+  <p class="muted small" style="text-align:center;margin-top:12px">
+    Your next question is selected from how you answer this one.
+  </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const opts = document.querySelectorAll('.option');
+  const btn = document.getElementById('nextBtn');
+  opts.forEach(o => o.addEventListener('click', () => {
+    opts.forEach(x => x.classList.remove('selected'));
+    o.classList.add('selected');
+    o.querySelector('input').checked = true;
+    btn.disabled = false;
+  }));
+</script>
+{% endblock %}

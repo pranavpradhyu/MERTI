@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Messages{% endblock %}
+{% block container_class %}wide{% endblock %}
+{% block content %}
+<div class="mail-layout">
+  {% include "_mail_sidebar.html" %}
+  <div>
+    <div class="between" style="margin-bottom:12px">
+      <h1 style="margin:0;font-size:1.3rem">{{ box|capitalize }}</h1>
+      <span class="muted small">{{ msgs|length }} message(s)</span>
+    </div>
+    <div class="mail-list">
+      {% if msgs %}
+        {% for m in msgs %}
+          {% set other = m.sender if box=='inbox' or box=='starred' else m.recipient %}
+          <a class="mail-row {{ 'unread' if (box in ['inbox','starred']) and not m.is_read }}"
+             href="{{ url_for('mail.view_message', mid=m.id) }}">
+            <span class="contact" style="padding:0"><span class="a">{{ other.initials }}</span></span>
+            <span class="who">{{ other.full_name }}</span>
+            <span class="subj"><strong>{{ m.subject }}</strong>
+              <span class="muted"> — {{ m.body[:60] }}{% if m.body|length > 60 %}…{% endif %}</span></span>
+            <span class="when">{{ m.created_at.strftime('%d %b') }}</span>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div style="padding:26px;text-align:center" class="muted">No messages in {{ box }}.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

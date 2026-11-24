@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Analysis Report{% endblock %}
+{% block content %}
+<div class="pagehead between">
+  <div><h1>Assessment Analysis</h1>
+    <p class="muted">{{ meta.name }} · attempt {{ session.attempt }} · {{ report.created_at.strftime('%d %b %Y, %H:%M') }}
+      {% if not is_owner %} · Candidate: <strong>{{ session.user.full_name }}</strong>{% endif %}</p></div>
+  <a class="btn btn-ghost" href="{{ url_for('main.dashboard') }}">← Dashboard</a>
+</div>
+
+<div class="card">
+  <div class="grid cols-3" style="align-items:center">
+    <div>
+      <div class="score-big">{{ report.overall_score }}<span style="font-size:1.1rem;color:var(--muted)">/100</span></div>
+      <span class="badge level" style="margin-top:8px">{{ report.level }}</span>
+      <div class="muted small" style="margin-top:10px">
+        MCQ {{ report.mcq_score|int }}/100 ·
+        {% if report.interview_score is not none %}AI interview {{ report.interview_score|int }}/100{% else %}AI interview skipped{% endif %}</div>
+    </div>
+    <div style="grid-column:span 2"><p style="margin:0">{{ report.summary }}</p></div>
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card"><h2>Strong areas</h2>
+    {% if report.strengths %}{% for s in report.strengths %}<span class="chip good">✓ {{ s }}</span>{% endfor %}
+    {% else %}<p class="muted small">No area reached the strength threshold (70+) this time.</p>{% endif %}</div>
+  <div class="card"><h2>Areas to improve</h2>
+    {% if report.weaknesses %}{% for w in report.weaknesses %}<span class="chip bad">↑ {{ w }}</span>{% endfor %}
+    {% else %}<p class="muted small">No clear weak areas — a well-rounded result.</p>{% endif %}</div>
+</div>
+
+<div class="card">
+  <h2>Skill breakdown</h2>
+  <p class="muted small">Difficulty-weighted MCQ performance blended with AI-interview scoring per competency.</p>
+  <div style="margin-top:14px">
+    {% for c in comp_detail %}
+      <div style="margin-bottom:16px">
+        <div class="between" style="margin-bottom:5px"><strong>{{ c.name }}</strong>
+          <span class="muted small">{{ c.score }}/100</span></div>
+        <div class="meter"><span style="width:{{ c.score }}%;{% if c.score >= 70 %}background:var(--good){% elif c.score < 50 %}background:var(--bad){% endif %}"></span></div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if interview_items %}
+<div class="card">
+  <h2>AI interview — evidence &amp; evaluation</h2>
+  {% for it in interview_items %}
+    <div style="padding:14px 0;border-bottom:1px solid var(--line)">
+      <div class="ai-bubble" style="margin-bottom:10px"><strong>Q{{ loop.index }}.</strong> {{ it.prompt }}</div>
+      <div class="muted small">Your answer:</div>
+      <p style="margin:4px 0 8px;white-space:pre-wrap">{{ it.answer_text or '(no answer captured)' }}</p>
+      {% if it.recording %}<a class="small" href="{{ url_for('static', filename='recordings/' ~ it.recording) }}" target="_blank">▶ recording</a>{% endif %}
+      <div class="between" style="margin-top:8px">
+        <span class="muted small">AI evaluation</span>
+        <strong>{{ it.ai_score|int }}/100</strong>
+      </div>
+      <div class="meter" style="margin-top:4px"><span style="width:{{ it.ai_score|int }}%"></span></div>
+      <p class="small muted" style="margin-top:8px">{{ it.ai_feedback }}</p>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if report.recommendations %}
+<div class="card">
+  <h2>Development recommendations</h2>
+  {% for rec in report.recommendations %}
+    <div style="margin-top:14px"><strong>{{ rec.area }}</strong>
+      <span class="muted small">· current {{ rec.score }}/100</span>
+      <ul class="rec" style="margin-top:7px">{% for a in rec.advice %}<li>{{ a }}</li>{% endfor %}</ul></div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if is_owner and suggestions %}
+<div class="card" style="border-left:4px solid var(--primary)">
+  <h2>✨ Suggested next assessments</h2>
+  <div class="grid cols-3" style="margin-top:12px">
+    {% for s in suggestions %}
+      <div class="card" style="margin:0;background:var(--soft);box-shadow:none">
+        <strong>{{ s.name }}</strong><p class="small muted" style="margin:6px 0 12px">{{ s.reason }}</p>
+        <form method="post" action="{{ url_for('assess.start', type_key=s.key) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn btn-sm btn-primary btn-block">Start</button></form></div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Evaluator feedback</h2>
+  <p class="muted small">This report is visible to the candidate and to all assessor, mentor and administrator roles.</p>
+  {% if reviews %}
+    {% for r in reviews %}
+      <div style="padding:12px 0;border-bottom:1px solid var(--line)">
+        <div class="between"><div><strong>{{ r.reviewer.full_name }}</strong>
+          <span class="badge role-{{ r.reviewer_role }}">{{ r.reviewer.role_label }}</span></div>
+          <span class="muted small">{% if r.rating %}{{ '★' * r.rating }} · {% endif %}{{ r.created_at.strftime('%d %b %Y') }}</span></div>
+        <p style="margin:6px 0 0">{{ r.comment }}</p></div>
+    {% endfor %}
+  {% else %}<p class="muted small">No feedback yet.</p>{% endif %}
+  {% if is_staff %}
+    <form method="post" action="{{ url_for('reviews.review_session', sid=session.id) }}" style="margin-top:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Add your feedback</label>
+      <select name="rating" style="max-width:160px"><option value="">No rating</option>
+        {% for i in range(5,0,-1) %}<option value="{{ i }}">{{ '★' * i }} ({{ i }}/5)</option>{% endfor %}</select>
+      <textarea name="comment" placeholder="Calibrate the AI findings and add development guidance…" required style="margin-top:8px"></textarea>
+      <button class="btn btn-primary" type="submit" style="margin-top:10px">Submit feedback</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

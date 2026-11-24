@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Content{% endblock %}
+{% block content %}
+<div class="pagehead between">
+  <div><h1>Assessment content</h1>
+    <p class="muted">{{ total }} questions across {{ by_comp|length }} competencies.</p></div>
+  <a class="btn btn-primary" href="{{ url_for('main.admin_new_question') }}">+ Add question</a>
+</div>
+
+{% for comp_key, questions in by_comp.items() %}
+  <div class="card">
+    <h2>{{ competencies[comp_key].name if comp_key in competencies else comp_key }}
+      <span class="muted small">({{ questions|length }})</span></h2>
+    <table>
+      <thead><tr><th style="width:55%">Question</th><th>Skill</th><th>Diff.</th><th></th></tr></thead>
+      <tbody>
+        {% for q in questions %}
+          <tr>
+            <td>{{ q.text }}</td>
+            <td class="muted small">{{ q.skill }}</td>
+            <td><span class="badge level">{{ q.difficulty }}</span></td>
+            <td>
+              <form class="inline-form" method="post"
+                    action="{{ url_for('main.admin_delete_question', qid=q.id) }}"
+                    onsubmit="return confirm('Remove this question?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="btn btn-sm btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Edit profile{% endblock %}
+{% block container_class %}mid{% endblock %}
+{% block content %}
+<div class="pagehead"><h1>Edit profile</h1></div>
+<div class="card">
+  <form method="post" action="{{ url_for('main.edit_profile') }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="row">
+      <div><label for="first_name">First name</label>
+        <input id="first_name" name="first_name" value="{{ user.first_name }}"></div>
+      <div><label for="last_name">Last name</label>
+        <input id="last_name" name="last_name" value="{{ user.last_name }}"></div>
+    </div>
+    <label for="mobile">Mobile number</label>
+    <input id="mobile" name="mobile" value="{{ user.mobile }}">
+    <label>Username <span class="muted small">(cannot be changed)</span></label>
+    <input value="@{{ user.username }}" disabled>
+    <label for="picture">Update profile picture <span class="muted small">(optional)</span></label>
+    <input id="picture" type="file" name="picture" accept="image/*">
+    <div class="flex" style="margin-top:18px">
+      <button class="btn btn-primary" type="submit">Save changes</button>
+      <a class="btn btn-ghost" href="{{ url_for('main.profile') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

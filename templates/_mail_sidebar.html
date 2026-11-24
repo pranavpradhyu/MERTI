@@ -1,0 +1,23 @@
+<div class="mail-side">
+  <a class="btn btn-primary btn-block" href="{{ url_for('mail.compose') }}">✎ Compose</a>
+  <div class="mail-folders">
+    <a href="{{ url_for('mail.inbox', box='inbox') }}" class="{{ 'active' if box=='inbox' }}">📥 Inbox
+      {% if unread_count %}<span class="pill">{{ unread_count }}</span>{% endif %}</a>
+    <a href="{{ url_for('mail.inbox', box='starred') }}" class="{{ 'active' if box=='starred' }}">★ Starred</a>
+    <a href="{{ url_for('mail.inbox', box='sent') }}" class="{{ 'active' if box=='sent' }}">📤 Sent</a>
+  </div>
+  <div class="contacts">
+    {% for role_key, people in contacts.items() %}
+      {% if people %}
+        <h4>{{ roles[role_key] }}</h4>
+        {% for u in people %}
+          <a class="contact" href="{{ url_for('mail.compose', to=u.id) }}">
+            <span class="a">{{ u.initials }}</span>
+            <span><strong style="font-weight:600">{{ u.full_name }}</strong><br>
+              <span class="em">{{ u.email }}</span></span>
+          </a>
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>

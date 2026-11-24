@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="pagehead between">
+  <div><h1>Welcome, {{ current_user.first_name }}</h1>
+    <p class="muted">Take an adaptive, AI-assisted assessment with an AI interview.</p></div>
+  <a class="btn btn-ghost" href="{{ url_for('main.my_assessments') }}">Assessments &amp; Analysis →</a>
+</div>
+
+{% if not current_user.resume_skills %}
+  <div class="card" style="border-left:4px solid var(--accent)">
+    <div class="between">
+      <div><strong>Add your resume to personalise everything.</strong>
+        <div class="muted small">Our AI extracts your skills and builds a resume-aware interview.</div></div>
+      <a class="btn btn-accent" href="{{ url_for('main.resume_skills') }}">Upload resume</a>
+    </div>
+  </div>
+{% endif %}
+
+{% if in_progress %}
+  <div class="card" style="border-left:4px solid var(--warn)">
+    <div class="between">
+      <div><strong>You have an assessment in progress.</strong>
+        <div class="muted small">{{ assessment_types[in_progress.type_key].name }} · attempt {{ in_progress.attempt }}</div></div>
+      <a class="btn btn-primary" href="{{ url_for('assess.take', sid=in_progress.id) }}">Resume</a>
+    </div>
+  </div>
+{% endif %}
+
+{% if suggestions %}
+  <div class="card" style="border-left:4px solid var(--primary)">
+    <h2>✨ Recommended for you</h2>
+    <p class="muted small">Tailored from your resume and most recent results.</p>
+    <div class="grid cols-3" style="margin-top:12px">
+      {% for s in suggestions %}
+        <div class="card" style="margin:0;background:var(--soft);box-shadow:none">
+          <strong>{{ s.name }}</strong>
+          <p class="small muted" style="margin:6px 0 12px">{{ s.reason }}</p>
+          <form method="post" action="{{ url_for('assess.start', type_key=s.key) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn btn-sm btn-primary btn-block">Start</button></form>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+<h2 style="margin-top:22px">Practice assessments</h2>
+<p class="muted small">Each assessment = 10 adaptive MCQs (1 min each) + an AI interview (2 min/question). 1-hour overall limit.</p>
+<div class="grid cols-2" style="margin-top:12px">
+  {% for key, a in assessment_types.items() %}
+    <div class="card" style="margin:0">
+      <div class="flex" style="align-items:flex-start">
+        <div class="avatar sm" style="background:var(--primary-soft);color:var(--primary-dark)">{{ a.icon }}</div>
+        <div style="flex:1">
+          <h3 style="margin-bottom:3px">{{ a.name }}</h3>
+          <p class="small muted" style="margin:0 0 12px">{{ a.description }}</p>
+          <form method="post" action="{{ url_for('assess.start', type_key=key) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn btn-sm btn-dark">Begin assessment →</button></form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

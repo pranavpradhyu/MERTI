@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Add question{% endblock %}
+{% block container_class %}mid{% endblock %}
+{% block content %}
+<div class="pagehead"><h1>Add a question</h1></div>
+<div class="card">
+  <form method="post" action="{{ url_for('main.admin_new_question') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="row">
+      <div><label for="competency">Competency</label>
+        <select id="competency" name="competency" required>
+          {% for key, c in competencies.items() %}<option value="{{ key }}">{{ c.name }}</option>{% endfor %}
+        </select></div>
+      <div><label for="difficulty">Difficulty (1–5)</label>
+        <select id="difficulty" name="difficulty" required>
+          {% for i in range(1,6) %}<option value="{{ i }}">{{ i }}</option>{% endfor %}
+        </select></div>
+    </div>
+    <label for="skill">Skill / sub-topic</label>
+    <input id="skill" name="skill" placeholder="e.g. Market sizing">
+    <label for="text">Question text</label>
+    <textarea id="text" name="text" style="min-height:80px" required></textarea>
+    {% for i in range(4) %}
+      <div class="flex" style="gap:10px">
+        <div style="flex:1"><label for="opt{{ i }}">Option {{ "ABCD"[i] }}</label>
+          <input id="opt{{ i }}" name="opt{{ i }}" required></div>
+        <label class="checkbox" style="margin-top:34px">
+          <input type="radio" name="correct" value="{{ i }}" {{ 'checked' if i==0 }}> Correct
+        </label>
+      </div>
+    {% endfor %}
+    <label for="explanation">Explanation <span class="muted small">(optional)</span></label>
+    <input id="explanation" name="explanation">
+    <div class="flex" style="margin-top:16px">
+      <button class="btn btn-primary" type="submit">Add question</button>
+      <a class="btn btn-ghost" href="{{ url_for('main.admin_content') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

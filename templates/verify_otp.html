@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Verify OTP{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(1200px 600px at 50% -10%,#6d6be0,#4b47b8 45%,#2a2a63)">
+  <div class="card pad-lg" style="width:100%;max-width:420px">
+    <h1 style="font-size:1.4rem">Enter your OTP</h1>
+    <p class="muted small">Sent to mobile ending {{ mobile[-4:] if mobile else '' }}. Optionally set a new password.</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+    <form method="post" action="{{ url_for('auth.verify_otp') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="code">4-digit OTP</label>
+      <input id="code" name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+             style="letter-spacing:10px;text-align:center;font-size:1.3rem;font-weight:700" required autofocus>
+      <div class="row" style="margin-top:4px">
+        <div><label for="new_password">New password <span class="muted small">(optional)</span></label>
+          <input id="new_password" type="password" name="new_password"></div>
+        <div><label for="confirm_password">Confirm</label>
+          <input id="confirm_password" type="password" name="confirm_password"></div>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit" style="margin-top:16px">Verify &amp; sign in</button>
+    </form>
+    <div class="auth-foot" style="margin-top:14px"><a href="{{ url_for('auth.forgot') }}">← Request a new code</a></div>
+  </div>
+</div>
+{% endblock %}

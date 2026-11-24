@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Review{% endblock %}
+{% block container_class %}mid{% endblock %}
+{% block content %}
+<div class="pagehead between">
+  <div><h1>Review candidate</h1>
+    <p class="muted">{{ candidate.full_name }} · {{ meta.name }} ·
+      <strong>{{ report.overall_score }}/100</strong> ({{ report.level }})</p></div>
+  <a class="btn btn-ghost" href="{{ url_for('assess.report', sid=session.id) }}">Full report →</a>
+</div>
+
+<div class="card">
+  <h2>Result snapshot</h2>
+  {% for c in comp_detail %}
+    <div class="between" style="margin:8px 0 3px"><span>{{ c.name }}</span><span class="muted small">{{ c.score }}/100</span></div>
+    <div class="meter"><span style="width:{{ c.score }}%"></span></div>
+  {% endfor %}
+  <p class="small muted" style="margin-top:14px">{{ report.summary }}</p>
+</div>
+
+<div class="card">
+  <h2>Add your professional judgement</h2>
+  <form method="post" action="{{ url_for('reviews.review_session', sid=session.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="rating">Overall rating <span class="muted small">(optional)</span></label>
+    <select id="rating" name="rating">
+      <option value="">No rating</option>
+      {% for i in range(5,0,-1) %}<option value="{{ i }}">{{ '★' * i }} ({{ i }}/5)</option>{% endfor %}
+    </select>
+    <label for="comment">Review comment</label>
+    <textarea id="comment" name="comment" placeholder="Calibrate the AI findings, note evidence, and give development guidance…" required></textarea>
+    <button class="btn btn-primary" type="submit" style="margin-top:14px">Submit review</button>
+  </form>
+</div>
+
+{% if reviews %}
+<div class="card">
+  <h2>Previous reviews</h2>
+  {% for r in reviews %}
+    <div style="padding:12px 0;border-bottom:1px solid var(--line)">
+      <div class="between">
+        <div><strong>{{ r.reviewer.full_name }}</strong>
+          <span class="badge role-{{ r.reviewer_role }}">{{ r.reviewer.role_label }}</span></div>
+        <span class="muted small">
+          {% if r.rating %}{{ '★' * r.rating }} · {% endif %}{{ r.created_at.strftime('%d %b %Y') }}</span>
+      </div>
+      <p style="margin:6px 0 0">{{ r.comment }}</p>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

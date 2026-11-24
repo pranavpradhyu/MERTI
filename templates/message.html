@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ msg.subject }}{% endblock %}
+{% block container_class %}wide{% endblock %}
+{% block content %}
+<div class="mail-layout">
+  {% include "_mail_sidebar.html" %}
+  <div>
+    <div class="between" style="margin-bottom:12px">
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('mail.inbox') }}">← Back</a>
+      {% if msg.recipient_id == current_user.id %}
+        <form class="inline-form" method="post" action="{{ url_for('mail.star', mid=msg.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn btn-ghost btn-sm" type="submit">{{ '★ Starred' if msg.starred else '☆ Star' }}</button>
+        </form>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:12px">{{ msg.subject }}</h2>
+      <div class="flex" style="margin-bottom:16px">
+        <div class="avatar sm" style="background:var(--primary);color:#fff">{{ msg.sender.initials }}</div>
+        <div><strong>{{ msg.sender.full_name }}</strong>
+          <span class="badge role-{{ msg.sender.role }}">{{ msg.sender.role_label }}</span><br>
+          <span class="muted small">{{ msg.sender.email }} → {{ msg.recipient.email }} · {{ msg.created_at.strftime('%d %b %Y, %H:%M') }}</span></div>
+      </div>
+      <div class="divider"></div>
+      <p style="white-space:pre-wrap">{{ msg.body }}</p>
+    </div>
+    <div class="card">
+      <h3>Reply</h3>
+      <form method="post" action="{{ url_for('mail.reply', mid=msg.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <textarea name="body" placeholder="Write your reply…" required></textarea>
+        <button class="btn btn-primary" type="submit" style="margin-top:12px">Send reply</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

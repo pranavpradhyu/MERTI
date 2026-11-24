@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="pagehead"><h1>{{ user.role_label }} dashboard</h1>
+  <p class="muted">Review candidate assessments and apply professional judgement.</p></div>
+
+{% if stats %}
+  <div class="grid cols-3" style="margin-bottom:6px">
+    <div class="card stat"><div class="n">{{ stats.candidates }}</div><div class="l">Candidates</div></div>
+    <div class="card stat"><div class="n">{{ stats.assessments }}</div><div class="l">Completed assessments</div></div>
+    <div class="card stat"><div class="n">{{ stats.questions }}</div><div class="l">Questions in bank</div></div>
+  </div>
+{% endif %}
+
+<div class="card">
+  <h2>Candidates</h2>
+  {% if rows %}
+  <table>
+    <thead><tr><th>Candidate</th><th>Completed</th><th>Latest score</th><th>Latest</th><th></th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td><div class="flex">
+            <div class="avatar sm">
+              {% if row.candidate.picture %}<img class="avatar sm" src="{{ url_for('static', filename='uploads/' ~ row.candidate.picture) }}" alt="">
+              {% else %}{{ row.candidate.initials }}{% endif %}</div>
+            <div><strong>{{ row.candidate.full_name }}</strong><br>
+              <span class="muted small">{{ row.candidate.email }}</span></div></div></td>
+          <td>{{ row.completed }}</td>
+          <td>{% if row.latest %}<strong>{{ row.latest.overall_score }}</strong>/100
+            <span class="badge level">{{ row.latest.level }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+          <td class="muted small">{% if row.latest %}{{ row.latest.created_at.strftime('%d %b %Y') }}{% else %}—{% endif %}</td>
+          <td><a class="small" href="{{ url_for('main.profile', user_id=row.candidate.id) }}">Profile</a> ·
+            <a class="small" href="{{ url_for('main.candidate_assessments', user_id=row.candidate.id) }}">Assessments</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">No candidates have registered yet.</p>{% endif %}
+</div>
+{% endblock %}

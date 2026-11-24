@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block body %}
+<div style="min-height:100vh;display:grid;place-items:center;padding:30px 16px;
+  background:radial-gradient(1200px 600px at 50% -10%,#6d6be0,#4b47b8 45%,#2a2a63)">
+  <div class="card" style="width:100%;max-width:540px;padding:30px">
+    <div style="text-align:center;margin-bottom:12px">
+      <div class="brand" style="justify-content:center"><span class="logo">M</span>
+        <span style="color:var(--navy)">MERTI</span></div>
+      <h1 style="font-size:1.4rem;margin-top:8px">Create your account</h1>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('auth.register') }}" enctype="multipart/form-data" id="regForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="row">
+        <div><label for="first_name">First name</label>
+          <input id="first_name" name="first_name" value="{{ form.first_name or '' }}" required></div>
+        <div><label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" value="{{ form.last_name or '' }}" required></div>
+      </div>
+      <div class="row">
+        <div><label for="username">Username</label>
+          <input id="username" name="username" value="{{ form.username or '' }}" required>
+          <div class="help">Used to sign in. 3–32 chars.</div></div>
+        <div><label for="mobile">Mobile number</label>
+          <input id="mobile" name="mobile" value="{{ form.mobile or '' }}" required>
+          <div class="help">Used for OTP reset.</div></div>
+      </div>
+
+      <label for="role">Role</label>
+      <select id="role" name="role" required>
+        <option value="">Select a role…</option>
+        {% for key, label in roles.items() %}
+          <option value="{{ key }}" {{ 'selected' if form.role == key }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <div class="row">
+        <div><label for="password">Password</label>
+          <input id="password" type="password" name="password" required>
+          <div class="help">Min 8 chars, a letter and a number.</div></div>
+        <div><label for="confirm_password">Re-type password</label>
+          <input id="confirm_password" type="password" name="confirm_password" required>
+          <div class="help" id="matchMsg"></div></div>
+      </div>
+
+      <label for="picture">Profile picture <span class="muted small">(optional)</span></label>
+      <input id="picture" type="file" name="picture" accept="image/*">
+
+      <div id="resumeBlock" style="display:none">
+        <label for="resume">Resume <span class="muted small">(PDF, DOCX or TXT — our AI will extract your skills)</span></label>
+        <input id="resume" type="file" name="resume" accept=".pdf,.docx,.txt">
+      </div>
+
+      <div class="checkbox" id="consentWrap" style="display:none">
+        <input type="checkbox" id="consent" name="consent">
+        <label for="consent">I consent to completing assessments and to MERTI processing my
+          responses and resume to generate development findings.</label>
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit" style="margin-top:20px">Create account</button>
+    </form>
+    <div class="auth-foot" style="text-align:center;margin-top:14px">
+      Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const role=document.getElementById('role'), rb=document.getElementById('resumeBlock'),
+        cw=document.getElementById('consentWrap'), consent=document.getElementById('consent');
+  function toggleRole(){ const c = role.value==='candidate';
+    rb.style.display = c?'block':'none'; cw.style.display = c?'flex':'none'; consent.required=c; }
+  role.addEventListener('change', toggleRole); toggleRole();
+
+  const pw=document.getElementById('password'), cpw=document.getElementById('confirm_password'),
+        msg=document.getElementById('matchMsg');
+  function checkMatch(){ if(!cpw.value){msg.textContent='';return true;}
+    if(pw.value===cpw.value){msg.textContent='✓ Passwords match';msg.style.color='#179b63';return true;}
+    msg.textContent='✗ Passwords do not match';msg.style.color='#d6455b';return false; }
+  pw.addEventListener('input',checkMatch); cpw.addEventListener('input',checkMatch);
+  document.getElementById('regForm').addEventListener('submit',e=>{if(!checkMatch()){e.preventDefault();cpw.focus();}});
+</script>
+{% endblock %}

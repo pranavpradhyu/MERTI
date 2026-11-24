@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}AI Interview{% endblock %}
+{% block container_class %}mid{% endblock %}
+{% block content %}
+<div class="card pad-lg">
+  <div class="progress-head">
+    <div><span class="badge role-mentor">AI Interview</span>
+      <div class="muted small" style="margin-top:6px">{{ meta.name }} · Question {{ index }} of {{ total }}</div></div>
+    <div style="text-align:right">
+      <div class="timer" id="qTimer" data-seconds="{{ per_q }}">02:00</div>
+      <div class="muted small" style="margin-top:4px">Overall <span id="mainTimer" data-seconds="{{ remaining }}">—</span></div>
+    </div>
+  </div>
+
+  <div class="grid cols-2" style="margin:10px 0 16px">
+    <div class="cam-wrap">
+      <video id="cam" autoplay playsinline muted></video>
+      <div class="cam-badge" id="recBadge" style="display:none"><span class="d"></span>REC</div>
+    </div>
+    <div>
+      <div class="ai-bubble">
+        <strong>AI Interviewer</strong>
+        <p style="margin:8px 0 0">{{ item.prompt }}</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="replayBtn" type="button" style="margin-top:10px">🔊 Replay question</button>
+    </div>
+  </div>
+
+  <div id="permNote" class="support-bar" style="display:none">
+    Camera/microphone access was blocked. You can still type your answer below.
+  </div>
+
+  <form id="ivForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="transcript">Your answer <span class="muted small">(spoken answer is transcribed live — you can edit it)</span></label>
+    <textarea id="transcript" name="transcript" class="transcript" placeholder="Start speaking, or type your answer here…"></textarea>
+    <button class="btn btn-primary btn-block" type="submit" id="submitBtn" style="margin-top:14px">
+      Submit answer &amp; continue →</button>
+  </form>
+
+  <div class="support-bar" style="margin-top:16px">
+    <strong>Having trouble?</strong> If the interview freezes or ends abruptly, contact
+    <a href="mailto:{{ support_email }}">{{ support_email }}</a> (Support) or
+    <a href="mailto:{{ admin_email }}">{{ admin_email }}</a> (Platform Administrator).
+    <form class="inline-form" method="post" action="{{ url_for('assess.interview_skip', sid=session.id) }}" style="margin-top:8px;display:block"
+          onsubmit="return confirm('Skip the AI interview? Your report will be based on the MCQ phase only.')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn btn-accent btn-sm" type="submit">Skip interview &amp; view my report →</button>
+    </form>
+    <form class="inline-form" method="post" action="{{ url_for('assess.abandon', sid=session.id) }}" style="margin-top:8px;display:block">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn btn-danger btn-sm" type="submit">End interview</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const csrf=document.querySelector('meta[name=csrf-token]').content;
+  const video=document.getElementById('cam'), recBadge=document.getElementById('recBadge'),
+        permNote=document.getElementById('permNote'), transcript=document.getElementById('transcript'),
+        form=document.getElementById('ivForm'), submitBtn=document.getElementById('submitBtn');
+  const prompt = {{ item.prompt|tojson }};
+  const answerUrl = "{{ url_for('assess.interview_answer', sid=session.id) }}";
+  let mediaStream=null, recorder=null, chunks=[], recognition=null, submitted=false;
+
+  // Camera + mic
+  navigator.mediaDevices?.getUserMedia({video:true,audio:true}).then(stream=>{
+    mediaStream=stream; video.srcObject=stream;
+    try{ recorder=new MediaRecorder(stream); recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
+      recorder.start(); recBadge.style.display='flex'; }catch(e){}
+  }).catch(()=>{ permNote.style.display='block'; });
+
+  // Speech-to-text
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){ recognition=new SR(); recognition.continuous=true; recognition.interimResults=true; recognition.lang='en-US';
+    let finalText='';
+    recognition.onresult=e=>{ let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){ const t=e.results[i][0].transcript;
+        if(e.results[i].isFinal) finalText+=t+' '; else interim+=t; }
+      transcript.value=(finalText+interim).trim(); };
+    try{ recognition.start(); }catch(e){}
+  }
+
+  // Speak the question, then the timer starts
+  function speak(){ if('speechSynthesis'in window){ const u=new SpeechSynthesisUtterance(prompt);
+      u.rate=1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }
+  document.getElementById('replayBtn').addEventListener('click',speak);
+  speak();
+
+  // Timers
+  function fmt(s){const m=Math.floor(s/60),x=s%60;return (m<10?'0':'')+m+':'+(x<10?'0':'')+x;}
+  let q=parseInt(document.getElementById('qTimer').dataset.seconds)||120; const qEl=document.getElementById('qTimer');
+  const qi=setInterval(()=>{q--; qEl.textContent=fmt(Math.max(0,q));
+    qEl.classList.toggle('warn',q<=30&&q>15); qEl.classList.toggle('danger',q<=15);
+    if(q<=0){clearInterval(qi); doSubmit();}},1000);
+  const mEl=document.getElementById('mainTimer'); let m=parseInt(mEl.dataset.seconds);
+  if(!isNaN(m)){const mi=setInterval(()=>{m--; mEl.textContent=fmt(Math.max(0,m));
+    if(m<=0){clearInterval(mi); location.reload();}},1000);}
+
+  async function doSubmit(){
+    if(submitted) return; submitted=true; submitBtn.disabled=true; submitBtn.textContent='Submitting…';
+    clearInterval(qi);
+    try{ recognition&&recognition.stop(); }catch(e){}
+    const fd=new FormData(); fd.append('csrf_token',csrf); fd.append('transcript',transcript.value||'');
+    const finish=async()=>{
+      try{ const r=await fetch(answerUrl,{method:'POST',headers:{'X-CSRF-Token':csrf},body:fd});
+        window.location=r.url; }catch(e){ window.location="{{ url_for('assess.interview', sid=session.id) }}"; }
+    };
+    if(recorder&&recorder.state!=='inactive'){
+      recorder.onstop=()=>{ const blob=new Blob(chunks,{type:'video/webm'});
+        if(blob.size>0&&blob.size<24*1024*1024) fd.append('recording',blob,'answer.webm'); finish(); };
+      recorder.stop();
+      try{ mediaStream.getTracks().forEach(t=>t.stop()); }catch(e){}
+    } else { finish(); }
+  }
+  form.addEventListener('submit',e=>{e.preventDefault(); doSubmit();});
+</script>
+{% endblock %}

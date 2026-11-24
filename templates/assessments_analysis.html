@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Assessments & Analysis{% endblock %}
+{% block content %}
+{% set is_owner = (viewer.id == candidate.id) %}
+{% set is_staff = viewer.role in ['assessor','mentor','admin'] %}
+<div class="pagehead between">
+  <div><h1>Assessments &amp; Analysis</h1>
+    <p class="muted">{{ 'Your' if is_owner else candidate.full_name + "'s" }} attempts, analysis reports and feedback.</p></div>
+  {% if not is_owner %}<a class="btn btn-ghost" href="{{ url_for('main.profile', user_id=candidate.id) }}">← Profile</a>{% endif %}
+</div>
+
+{% if not groups %}
+  <div class="card"><p class="muted">No assessments attempted yet.
+    {% if is_owner %}<a href="{{ url_for('main.dashboard') }}">Start one →</a>{% endif %}</p></div>
+{% endif %}
+
+{% for key, meta, attempts in groups %}
+  <div class="card">
+    <div class="between" style="margin-bottom:10px">
+      <div><h2 style="margin:0">{{ meta.name }}</h2>
+        <span class="muted small">{{ attempts|length }} attempt(s)</span></div>
+      {% if is_owner %}
+        <form method="post" action="{{ url_for('assess.start', type_key=key) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn btn-sm btn-primary">Re-attempt →</button></form>
+      {% endif %}
+    </div>
+
+    {% for a in attempts %}
+      {% set s = a.session %}
+      <details class="attempt">
+        <summary>
+          <span><strong>Attempt {{ s.attempt }}</strong>
+            <span class="muted small">· {{ s.started_at.strftime('%d %b %Y, %H:%M') }}</span></span>
+          <span>
+            {% if s.status == 'completed' and s.report %}
+              <strong>{{ s.report.overall_score }}</strong>/100
+              <span class="badge level">{{ s.report.level }}</span>
+            {% elif s.status == 'in_progress' %}<span class="badge role-mentor">In progress</span>
+            {% else %}<span class="badge role-admin">{{ s.status|title }}</span>{% endif %}
+          </span>
+        </summary>
+        <div class="body">
+          {% if s.status == 'completed' and s.report %}
+            <p class="small" style="margin-top:0">{{ s.report.summary }}</p>
+            <a class="btn btn-sm btn-ghost" href="{{ url_for('assess.report', sid=s.id) }}">Open full analysis report →</a>
+
+            <div class="divider"></div>
+            <strong class="small">Feedback from evaluators</strong>
+            {% if a.feedback %}
+              {% for r in a.feedback %}
+                <div style="padding:9px 0;border-bottom:1px solid var(--line)">
+                  <div class="between"><span><strong>{{ r.reviewer.full_name }}</strong>
+                    <span class="badge role-{{ r.reviewer_role }}">{{ r.reviewer.role_label }}</span></span>
+                    <span class="muted small">{% if r.rating %}{{ '★' * r.rating }} · {% endif %}{{ r.created_at.strftime('%d %b') }}</span></div>
+                  <p class="small" style="margin:4px 0 0">{{ r.comment }}</p></div>
+              {% endfor %}
+            {% else %}<p class="muted small">No feedback yet.</p>{% endif %}
+
+            {% if is_staff %}
+              <form method="post" action="{{ url_for('reviews.review_session', sid=s.id) }}" style="margin-top:12px">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="flex" style="align-items:flex-start">
+                  <select name="rating" style="max-width:150px"><option value="">No rating</option>
+                    {% for i in range(5,0,-1) %}<option value="{{ i }}">{{ '★' * i }}</option>{% endfor %}</select>
+                </div>
+                <textarea name="comment" placeholder="Add your feedback on this attempt…" required style="margin-top:8px;min-height:80px"></textarea>
+                <button class="btn btn-sm btn-primary" type="submit" style="margin-top:8px">Submit feedback</button>
+              </form>
+            {% endif %}
+          {% elif s.status == 'in_progress' and is_owner %}
+            <a class="btn btn-sm btn-primary" href="{{ url_for('assess.take', sid=s.id) }}">Resume attempt →</a>
+          {% else %}
+            <p class="muted small" style="margin:0">No analysis available for this attempt.</p>
+          {% endif %}
+        </div>
+      </details>
+    {% endfor %}
+  </div>
+{% endfor %}
+{% endblock %}

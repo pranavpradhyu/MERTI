@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Compose{% endblock %}
+{% block container_class %}wide{% endblock %}
+{% block content %}
+<div class="mail-layout">
+  {% include "_mail_sidebar.html" %}
+  <div>
+    <h1 style="font-size:1.3rem">New message</h1>
+    {% if not recipient %}
+      <div class="card"><p class="muted" style="margin:0">Pick a recipient from the contacts list on the left —
+        every role's email is listed there. Click a person to start writing to them.</p></div>
+    {% else %}
+      <div class="card">
+        <form method="post" action="{{ url_for('mail.compose') }}" id="composeForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="recipient_id" value="{{ recipient.id }}">
+          <label>To</label>
+          <div class="flex" style="padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--soft)">
+            <span class="a" style="width:28px;height:28px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:.72rem;font-weight:700">{{ recipient.initials }}</span>
+            <span><strong>{{ recipient.full_name }}</strong>
+              <span class="badge role-{{ recipient.role }}">{{ recipient.role_label }}</span><br>
+              <span class="muted small">{{ recipient.email }}</span></span>
+            <a class="small" href="{{ url_for('mail.compose') }}" style="margin-left:auto">change</a>
+          </div>
+
+          <label for="subject">Subject</label>
+          <input id="subject" name="subject" maxlength="160" value="{{ form.subject or '' }}" required>
+
+          <label for="intent">AI assist <span class="muted small">(describe what you want to say, then draft it)</span></label>
+          <input id="intent" placeholder="e.g. ask for feedback on my latest assessment and a time to discuss">
+          <div class="ai-tools">
+            <button class="btn btn-sm" type="button" id="draftBtn">✨ Draft with AI</button>
+            <button class="btn btn-sm btn-ghost" type="button" id="polishBtn">🪄 Polish my draft</button>
+          </div>
+
+          <label for="body">Message</label>
+          <textarea id="body" name="body" style="min-height:180px" required>{{ form.body or '' }}</textarea>
+          <div class="flex" style="margin-top:14px">
+            <button class="btn btn-primary" type="submit">Send</button>
+            <a class="btn btn-ghost" href="{{ url_for('mail.inbox') }}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if recipient %}
+<script>
+  const csrf=document.querySelector('meta[name=csrf-token]').content;
+  const body=document.getElementById('body'), intent=document.getElementById('intent');
+  async function call(url,payload){ const r=await fetch(url,{method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrf}, body:JSON.stringify(payload)});
+    return (await r.json()).body; }
+  document.getElementById('draftBtn').addEventListener('click',async()=>{
+    if(!intent.value.trim()){intent.focus();return;}
+    body.value=await call("{{ url_for('mail.ai_draft') }}",{intent:intent.value,to_name:{{ recipient.first_name|tojson }}}); });
+  document.getElementById('polishBtn').addEventListener('click',async()=>{
+    if(!body.value.trim())return; body.value=await call("{{ url_for('mail.ai_polish') }}",{body:body.value}); });
+</script>
+{% endif %}
+{% endblock %}
