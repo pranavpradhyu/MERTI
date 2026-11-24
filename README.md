@@ -9,11 +9,6 @@ analysis report with strengths, gaps and development advice. Assessors, mentors 
 administrators review results and give feedback, and all four roles can message each
 other privately.
 
-> The demo runs on Render's free plan. It sleeps after ~15 minutes of inactivity, so the
-> first visit may take 30–60 seconds to wake up. Data created on the demo (new accounts,
-> assessment results) is reset whenever the service restarts; the four demo accounts below
-> are recreated automatically.
-
 ---
 
 ## Try it
